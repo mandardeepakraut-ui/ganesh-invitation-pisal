@@ -20,9 +20,12 @@
   ['heroVideo', 'heroText', 'sec2', 'sec3', 'garlandL', 'garlandR',
    'bell1', 'bell2', 'bell3', 'bell4', 'diyaL', 'diyaR',
    'invite', 'card', 'cardRegion', 'mouse', 'bubble',
-   'petals', 'shareBtn', 'mapBtn'].forEach(function (id) {
+   'petals', 'shareBtn', 'mapBtn', 'bubbleBox'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
+
+  /* --- Cached viewport height (updated on resize) ---------- */
+  var _vh = window.innerHeight;
 
   /* --- Easing helpers ------------------------------------- */
   function clamp01(v) { return Math.max(0, Math.min(1, v)); }
@@ -51,7 +54,7 @@
   ];
 
   function frame() {
-    var vh = window.innerHeight;
+    var vh = _vh; /* use cached value — avoids forced layout on every frame */
 
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
@@ -122,16 +125,27 @@
     }
   }
 
-  /* --- Render loop ---------------------------------------- */
-  var rafId = null;
-  var beatId = null;
-  var looping = false;
+  /* --- Render loop (event-driven — stops when idle) -------- */
+  /* Instead of burning 60 fps continuously, we schedule a frame
+     on every scroll/resize and fire one final frame 200 ms after
+     the last activity, then go completely idle. This alone cuts
+     CPU/GPU usage to near-zero when the user isn't scrolling. */
+  var rafId  = null;
+  var idleId = null;
 
-  function loop() {
+  function singleFrame() {
+    rafId = null;
     frame();
-    if (document.hidden) { looping = false; return; }
-    looping = true;
-    rafId = requestAnimationFrame(loop);
+  }
+
+  function requestRender() {
+    if (!rafId) rafId = requestAnimationFrame(singleFrame);
+    clearTimeout(idleId);
+    /* One extra frame after scroll settles to land the final position. */
+    idleId = setTimeout(function () {
+      idleId = null;
+      if (!rafId) rafId = requestAnimationFrame(singleFrame);
+    }, 200);
   }
 
   /* Safari/iOS can silently drop autoplay; nudge the video back. */
@@ -141,11 +155,6 @@
     v.muted = true;
     var pr = v.play();
     if (pr && pr.catch) pr.catch(function () {});
-  }
-
-  function tick() {
-    frame();
-    kickVideo();
   }
 
   /* --- [ENHANCEMENT] Stagger card fields on first reveal --- */
@@ -216,21 +225,32 @@
       el.shareBtn.addEventListener('click', shareOnWhatsApp);
     }
     if (el.mapBtn) el.mapBtn.addEventListener('click', openMap);
+    /* Bubble speech box is also a map shortcut */
+    if (el.bubble) el.bubble.addEventListener('click', openMap);
 
-    document.addEventListener('scroll', tick, { passive: true, capture: true });
-    window.addEventListener('resize', tick);
-    document.addEventListener('visibilitychange', function () {
-      tick();
-      if (!looping) loop();
+    document.addEventListener('scroll', function () {
+      requestRender();
+      kickVideo();
+    }, { passive: true, capture: true });
+
+    window.addEventListener('resize', function () {
+      _vh = window.innerHeight; /* refresh cached viewport height */
+      requestRender();
     });
 
-    beatId = setInterval(tick, 100);
-    loop();
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) requestRender();
+    });
+
+    /* iOS keepalive: nudge paused video every 4 s (low cost) */
+    setInterval(kickVideo, 4000);
+
+    requestRender(); /* initial paint */
   }
 
   window.addEventListener('pagehide', function () {
     cancelAnimationFrame(rafId);
-    clearInterval(beatId);
+    clearTimeout(idleId);
   });
 
   if (document.readyState === 'loading') {

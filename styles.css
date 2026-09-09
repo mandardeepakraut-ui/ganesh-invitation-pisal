@@ -18,6 +18,8 @@ html, body {
   padding: 0;
   background: var(--ground);
   -webkit-font-smoothing: antialiased;
+  /* Ensure only vertical scroll is captured — prevents diagonal jank on mobile */
+  touch-action: pan-y;
 }
 body { overflow-x: clip; }
 
@@ -41,11 +43,11 @@ p, h1, h2 { margin: 0; }
 }
 
 /* --- [ENHANCEMENT] Diya flame flicker --------------------- */
+/* 2-keyframe single drop-shadow: much cheaper on mobile GPU than
+   the previous 4-keyframe multi-shadow version. */
 @keyframes divaFlicker {
-  0%,100% { filter: drop-shadow(0 12px 18px rgba(140,86,36,.18)) drop-shadow(0 0 10px rgba(255,150,20,.40)); }
-  20%     { filter: drop-shadow(0 12px 18px rgba(140,86,36,.18)) drop-shadow(0 0 22px rgba(255,110,10,.75)); }
-  50%     { filter: drop-shadow(0 12px 18px rgba(140,86,36,.18)) drop-shadow(0 0 14px rgba(255,190,50,.50)); }
-  80%     { filter: drop-shadow(0 12px 18px rgba(140,86,36,.18)) drop-shadow(0 0 28px rgba(255,80, 10,.70)); }
+  0%, 100% { filter: drop-shadow(0 0 6px  rgba(255,130,20,.25)); }
+  50%       { filter: drop-shadow(0 0 18px rgba(255,90, 10,.60)); }
 }
 
 /* --- [ENHANCEMENT] WhatsApp button pulse ------------------ */
@@ -95,17 +97,14 @@ p, h1, h2 { margin: 0; }
   max-width: 540px;
   margin: 0 auto;
   position: relative;
-  /* The page's only background. Because it lives on this one element that
-     spans every section, there is no boundary anywhere for a tone to step
-     across; the sticky stages below are transparent and let it through.
-     It holds flat --ground through the hero and most of scene 2, so the
-     hero's scrim resolves onto exactly the same colour. */
   background: linear-gradient(180deg,
     var(--ground) 0%,
     var(--ground) 42%,
     #f6e0cd 100%);
   box-shadow: 0 0 80px rgba(120, 70, 30, .07);
   overflow-x: clip;
+  /* Isolate paint/layout to this subtree */
+  contain: layout style;
 }
 
 /* ===========================================================
@@ -186,7 +185,7 @@ p, h1, h2 { margin: 0; }
 /* ===========================================================
    Scroll scenes (sticky stages)
    =========================================================== */
-.scene { position: relative; }
+.scene { position: relative; contain: layout style; }
 .scene--invite  { height: 180vh; height: 180svh; }
 .scene--details { height: 170vh; height: 170svh; }
 
@@ -287,8 +286,8 @@ p, h1, h2 { margin: 0; }
   bottom: -1%;
   width: 36%;
   object-fit: contain;
-  will-change: transform;
-  animation: divaFlicker 2.6s ease-in-out infinite;   /* [ENHANCEMENT] flame glow */
+  will-change: transform;  /* slide-in uses transform */
+  animation: divaFlicker 3s ease-in-out infinite;   /* [ENHANCEMENT] flame glow */
 }
 .diya--left  { left: -6%;  transform: translate3d(-130%, 0, 0); }
 .diya--right { right: -6%; transform: translate3d(130%, 0, 0) scaleX(-1); animation-delay: .9s; /* [ENHANCEMENT] offset flicker */ }
@@ -490,6 +489,8 @@ p, h1, h2 { margin: 0; }
   z-index: 5;
   opacity: 0;
   will-change: opacity;
+  cursor: pointer;                     /* map shortcut — whole bubble is tappable */
+  -webkit-tap-highlight-color: transparent;
 }
 .bubble__box {
   background: #fffaf1;
