@@ -2,6 +2,9 @@
    Ganesh Chaturthi Invitation — scroll choreography
    Ported from the DCLogic component in
    "Ganesh Chaturthi Invitation.dc.html" (Claude Design).
+
+   Performance-optimized: rAF-gated scroll, cached card scale,
+   batched DOM reads, debounced resize, one-shot video init.
    =========================================================== */
 (function () {
   'use strict';
@@ -15,18 +18,28 @@
                   'and aarti at our home on 14 & 15 September 2026. Directions: '
   };
 
-  /* --- Element lookup ------------------------------------- */
+  /* --- Element lookup (cached once) ----------------------- */
   var el = {};
   ['heroVideo', 'heroText', 'sec2', 'sec3', 'garlandL', 'garlandR',
    'bell1', 'bell2', 'bell3', 'bell4', 'diyaL', 'diyaR',
    'invite', 'card', 'cardRegion', 'mouse', 'bubble',
    'petals', 'shareBtn', 'mapBtn', 'bubbleBox',
-   'calBtn', 'countdown', 'guestGreeting'].forEach(function (id) {
+   'calBtn', 'countdown', 'guestGreeting', 'thankYouScreen'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
 
-  /* --- Cached viewport height (updated on resize) ---------- */
+  /* --- Cached layout values (updated on resize) ----------- */
   var _vh = window.innerHeight;
+  var _cachedCardScale = 1;
+
+  function recalcCardScale() {
+    if (el.cardRegion && el.card && el.card.scrollHeight) {
+      _cachedCardScale = Math.max(0.7, Math.min(1,
+        (el.cardRegion.clientHeight - 10) / el.card.scrollHeight));
+    } else {
+      _cachedCardScale = 1;
+    }
+  }
 
   /* --- Easing helpers ------------------------------------- */
   function clamp01(v) { return Math.max(0, Math.min(1, v)); }
@@ -57,12 +70,16 @@
   function frame() {
     var vh = _vh; /* use cached value — avoids forced layout on every frame */
 
+    /* --- Batch DOM reads first ----------------------------- */
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    var p2 = el.sec2 ? sceneProgress(el.sec2, vh) : 0;
+    var p3 = el.sec3 ? sceneProgress(el.sec3, vh) : 0;
+
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
-      var p = sceneProgress(el.sec2, vh);
-
       /* Each garland half sweeps in from the edge it hangs against. */
-      var g = easeOut(seg(p, 0, 0.26));
+      var g = easeOut(seg(p2, 0, 0.26));
       if (el.garlandL) {
         el.garlandL.style.transform = 'translate3d(' + (-110 * (1 - g)) + '%,0,0)';
       }
@@ -73,11 +90,11 @@
       BELLS.forEach(function (spec) {
         var node = el[spec[0]];
         if (!node) return;
-        var t = easeOut(seg(p, spec[1], spec[2]));
+        var t = easeOut(seg(p2, spec[1], spec[2]));
         node.style.transform = 'translate3d(0,' + (spec[3] * (1 - t)) + '%,0)';
       });
 
-      var d = easeOut(seg(p, 0.26, 0.54));
+      var d = easeOut(seg(p2, 0.26, 0.54));
       if (el.diyaL) {
         el.diyaL.style.transform = 'translate3d(' + (-130 * (1 - d)) + '%,0,0)';
       }
@@ -85,7 +102,7 @@
         el.diyaR.style.transform = 'translate3d(' + (130 * (1 - d)) + '%,0,0) scaleX(-1)';
       }
 
-      var i = seg(p, 0.44, 0.70);
+      var i = seg(p2, 0.44, 0.70);
       if (el.invite) {
         el.invite.style.opacity = i;
         el.invite.style.transform =
@@ -95,18 +112,12 @@
 
     /* --- Scene 03: details card, mushak, speech bubble ------ */
     if (el.sec3) {
-      var p3 = sceneProgress(el.sec3, vh);
-
       var c = seg(p3, 0.10, 0.42);
       if (el.card) {
-        /* Shrink the card if it would overflow its region on short screens. */
-        var s = 1;
-        if (el.cardRegion && el.card.scrollHeight) {
-          s = Math.max(0.7, Math.min(1, (el.cardRegion.clientHeight - 10) / el.card.scrollHeight));
-        }
+        /* Use cached card scale — recalculated only on resize, not every frame. */
         el.card.style.opacity = c;
         el.card.style.transform =
-          'translate3d(0,' + (30 * (1 - easeOut(c))) + 'px,0) scale(' + s + ')';
+          'translate3d(0,' + (30 * (1 - easeOut(c))) + 'px,0) scale(' + _cachedCardScale + ')';
         maybeRevealCard(c); /* [ENHANCEMENT] stagger + WA pulse */
       }
 
@@ -121,41 +132,50 @@
 
     /* --- Scene 01: hero copy fades on first scroll ---------- */
     if (el.heroText) {
-      var y = window.scrollY || document.documentElement.scrollTop || 0;
-      el.heroText.style.opacity = Math.max(0, 1 - y / (vh * 0.45));
+      el.heroText.style.opacity = Math.max(0, 1 - scrollY / (vh * 0.45));
     }
   }
 
   /* --- Render loop (event-driven — stops when idle) -------- */
-  /* Instead of burning 60 fps continuously, we schedule a frame
-     on every scroll/resize and fire one final frame 200 ms after
-     the last activity, then go completely idle. This alone cuts
-     CPU/GPU usage to near-zero when the user isn't scrolling. */
-  var rafId  = null;
-  var idleId = null;
-
-  function singleFrame() {
-    rafId = null;
-    frame();
-  }
+  /* rAF-gated: only one callback queued at a time. A trailing
+     frame 200 ms after the last scroll ensures we land the final
+     position, then go completely idle. */
+  var ticking = false;
+  var idleId  = null;
 
   function requestRender() {
-    if (!rafId) rafId = requestAnimationFrame(singleFrame);
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(function () {
+        ticking = false;
+        frame();
+      });
+    }
     clearTimeout(idleId);
     /* One extra frame after scroll settles to land the final position. */
     idleId = setTimeout(function () {
       idleId = null;
-      if (!rafId) rafId = requestAnimationFrame(singleFrame);
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(function () {
+          ticking = false;
+          frame();
+        });
+      }
     }, 200);
   }
 
-  /* Safari/iOS can silently drop autoplay; nudge the video back. */
-  function kickVideo() {
+  /* --- Video initialisation (one-shot, not per-scroll) ---- */
+  /* Safari/iOS can silently drop autoplay; we nudge the video
+     once at boot and again on visibility change — never on scroll. */
+  function startVideo() {
     var v = el.heroVideo;
-    if (!v || !v.paused) return;
+    if (!v) return;
     v.muted = true;
-    var pr = v.play();
-    if (pr && pr.catch) pr.catch(function () {});
+    if (v.paused) {
+      var pr = v.play();
+      if (pr && pr.catch) pr.catch(function () {});
+    }
   }
 
   /* --- [ENHANCEMENT] Stagger card fields on first reveal --- */
@@ -222,8 +242,31 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
   }
 
+  /* --- Resize handling (debounced) ------------------------ */
+  var resizeTimer = null;
+
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      _vh = window.innerHeight;
+      recalcCardScale();
+      requestRender();
+    }, 150);
+  }
+
   /* --- Boot ----------------------------------------------- */
   function start() {
+    /* --- Post-event Thank You mode (auto after Sep 15 2026) - */
+    if (el.thankYouScreen) {
+      var now = new Date();
+      /* Show from Sep 16 onwards (event ends Sep 15) */
+      var eventOver = new Date('2026-09-16T00:00:00');
+      if (now >= eventOver) {
+        el.thankYouScreen.hidden = false;
+        return; /* skip rest of invite setup */
+      }
+    }
+
     if (el.petals) el.petals.hidden = !CONFIG.showPetals;
     if (el.shareBtn) {
       el.shareBtn.hidden = !CONFIG.showWhatsApp;
@@ -290,27 +333,33 @@
       });
     }
 
-    document.addEventListener('scroll', function () {
-      requestRender();
-      kickVideo();
-    }, { passive: true, capture: true });
+    /* --- Scroll: only schedule rAF, no video check ---------- */
+    document.addEventListener('scroll', requestRender, { passive: true, capture: true });
 
-    window.addEventListener('resize', function () {
-      _vh = window.innerHeight;
-      requestRender();
-    });
+    /* --- Resize: debounced ---------------------------------- */
+    window.addEventListener('resize', onResize);
 
+    /* --- Visibility: resume video + re-render --------------- */
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) requestRender();
+      if (!document.hidden) {
+        startVideo();
+        requestRender();
+      }
     });
 
-    setInterval(kickVideo, 4000);
+    /* --- Video: one-shot start (not per-scroll) ------------- */
+    startVideo();
+
+    /* --- Card scale: initial calculation -------------------- */
+    recalcCardScale();
+
+    /* --- First render --------------------------------------- */
     requestRender();
   }
 
   window.addEventListener('pagehide', function () {
-    cancelAnimationFrame(rafId);
     clearTimeout(idleId);
+    clearTimeout(resizeTimer);
   });
 
   if (document.readyState === 'loading') {

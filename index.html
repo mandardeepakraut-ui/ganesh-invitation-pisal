@@ -35,7 +35,8 @@
   <section class="hero" aria-label="Ganpati Bappa Morya">
     <video id="heroVideo" class="hero__video"
            src="uploads/Mouse_looking_at_rotating_Ganpati_202609051306.mp4"
-           autoplay loop muted playsinline aria-hidden="true"></video>
+           autoplay loop muted playsinline
+           preload="auto" aria-hidden="true"></video>
     <div class="hero__scrim"></div>
     <div id="heroText" class="hero__text">
       <p class="hero__mantra">गणपती बाप्पा मोरया</p>
@@ -54,35 +55,59 @@
       <span class="spark spark--3" aria-hidden="true"></span>
 
       <div id="garlandL" class="garland garland--left">
-        <img src="assets/garland.png" alt="Jasmine garlands">
+        <picture>
+          <source srcset="assets/optimized/garland.webp" type="image/webp">
+          <img src="assets/garland.png" alt="Jasmine garlands">
+        </picture>
       </div>
       <div id="garlandR" class="garland garland--right" aria-hidden="true">
-        <img src="assets/garland.png" alt="">
+        <picture>
+          <source srcset="assets/optimized/garland.webp" type="image/webp">
+          <img src="assets/garland.png" alt="">
+        </picture>
       </div>
 
       <div id="bell1" class="bell bell--1">
         <div class="bell__swing bell__swing--slow-a">
-          <img src="assets/bellLong2.png" alt="Temple bell">
+          <picture>
+            <source srcset="assets/optimized/bellLong2.webp" type="image/webp">
+            <img src="assets/bellLong2.png" alt="Temple bell">
+          </picture>
         </div>
       </div>
       <div id="bell2" class="bell bell--2">
         <div class="bell__swing bell__swing--fast-a">
-          <img src="uploads/bell.png" alt="Temple bell">
+          <picture>
+            <source srcset="assets/optimized/bell.webp" type="image/webp">
+            <img src="uploads/bell.png" alt="Temple bell">
+          </picture>
         </div>
       </div>
       <div id="bell3" class="bell bell--3">
         <div class="bell__swing bell__swing--fast-b">
-          <img src="uploads/bell.png" alt="Temple bell">
+          <picture>
+            <source srcset="assets/optimized/bell.webp" type="image/webp">
+            <img src="uploads/bell.png" alt="Temple bell">
+          </picture>
         </div>
       </div>
       <div id="bell4" class="bell bell--4">
         <div class="bell__swing bell__swing--slow-b">
-          <img src="assets/bellLong2.png" alt="Temple bell">
+          <picture>
+            <source srcset="assets/optimized/bellLong2.webp" type="image/webp">
+            <img src="assets/bellLong2.png" alt="Temple bell">
+          </picture>
         </div>
       </div>
 
-      <img id="diyaL" class="diya diya--left" src="assets/lamp2.png" alt="Brass oil lamp">
-      <img id="diyaR" class="diya diya--right" src="assets/lamp2.png" alt="Brass oil lamp">
+      <picture id="diyaL" class="diya diya--left">
+        <source srcset="assets/optimized/lamp2.webp" type="image/webp">
+        <img src="assets/lamp2.png" alt="Brass oil lamp">
+      </picture>
+      <picture id="diyaR" class="diya diya--right">
+        <source srcset="assets/optimized/lamp2.webp" type="image/webp">
+        <img src="assets/lamp2.png" alt="Brass oil lamp">
+      </picture>
 
       <div id="invite" class="invite">
         <p class="invite__salutation">॥ श्री गणेशाय नमः ॥</p>
@@ -160,13 +185,32 @@
         </div>
         <div id="mouse" class="mouse">
           <button id="mapBtn" type="button" class="mouse__btn" aria-label="Open directions in Google Maps">
-            <img src="uploads/Mouse.png" alt="Bappa's mushak">
+            <picture>
+              <source srcset="assets/optimized/Mouse.webp" type="image/webp">
+              <img src="uploads/Mouse.png" alt="Bappa's mushak">
+            </picture>
           </button>
         </div>
       </div>
 
     </div>
   </section>
+
+  <!-- Post-event Thank You screen (shown automatically after Sep 15) -->
+  <div id="thankYouScreen" class="thankyou" hidden>
+    <picture>
+      <source srcset="assets/optimized/bappa-farewell.webp" type="image/webp">
+      <img class="thankyou__img" src="assets/bappa-farewell.jpg" alt="Ganpati Bappa Morya — Visarjan">
+    </picture>
+    <div class="thankyou__content">
+      <p class="thankyou__mantra">गणपती बाप्पा मोरया</p>
+      <p class="thankyou__sub">पुढच्या वर्षी लवकर या 🙏</p>
+      <div class="thankyou__rule"></div>
+      <h1 class="thankyou__title">Thank You for Celebrating with Us</h1>
+      <p class="thankyou__body">It was a truly blessed Ganeshotsav. We are deeply grateful for your love, presence and blessings. May Bappa's grace be with you and your family always.</p>
+      <p class="thankyou__sig">— The Pisal Family</p>
+    </div>
+  </div>
 
 </div>
 

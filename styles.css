@@ -43,11 +43,11 @@ p, h1, h2 { margin: 0; }
 }
 
 /* --- [ENHANCEMENT] Diya flame flicker --------------------- */
-/* 2-keyframe single drop-shadow: much cheaper on mobile GPU than
-   the previous 4-keyframe multi-shadow version. */
-@keyframes divaFlicker {
-  0%, 100% { filter: drop-shadow(0 0 6px  rgba(255,130,20,.25)); }
-  50%       { filter: drop-shadow(0 0 18px rgba(255,90, 10,.60)); }
+/* Cheap glow: animate opacity on a small pseudo-element instead of
+   re-rasterising drop-shadow on the full alpha-channel PNG. */
+@keyframes diyaGlow {
+  0%, 100% { opacity: .35; }
+  50%       { opacity: .92; }
 }
 
 /* --- [ENHANCEMENT] WhatsApp button pulse ------------------ */
@@ -86,7 +86,7 @@ p, h1, h2 { margin: 0; }
   100% { opacity: 0; transform: translateY(260px) rotate(540deg) scale(.6); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .diya { animation: none !important; filter: drop-shadow(0 12px 18px rgba(140,86,36,.18)); }
+  .diya::after { animation: none !important; opacity: .6; }
   .btn-share--pulse { animation: none !important; }
   .field--reveal, .divider--reveal { animation: none !important; opacity: 1; }
 }
@@ -248,6 +248,7 @@ p, h1, h2 { margin: 0; }
   width: 200%;
   height: auto;
 }
+.garland picture { display: contents; }
 .garland--left  { left: -5%;  transform: translate3d(-110%, 0, 0); }
 .garland--right { right: -5%; transform: translate3d(110%, 0, 0); }
 .garland--right img { margin-left: -100%; }
@@ -270,6 +271,7 @@ p, h1, h2 { margin: 0; }
   object-fit: contain;
   object-position: top center;
 }
+.bell__swing picture { display: contents; }
 .bell__swing--slow-a { animation: swingSlow 5.2s ease-in-out infinite; }
 .bell__swing--fast-a { animation: swing 4.1s ease-in-out .4s infinite; }
 .bell__swing--fast-b { animation: swing 4.6s ease-in-out .9s infinite; }
@@ -285,12 +287,38 @@ p, h1, h2 { margin: 0; }
   position: absolute;
   bottom: -1%;
   width: 36%;
+  display: block;              /* <picture> is inline by default */
+  will-change: transform;      /* slide-in uses transform */
+}
+.diya img {
+  display: block;
+  width: 100%;
+  height: auto;
   object-fit: contain;
-  will-change: transform;  /* slide-in uses transform */
-  animation: divaFlicker 3s ease-in-out infinite;   /* [ENHANCEMENT] flame glow */
+}
+/* Pseudo-element glow replaces the old drop-shadow filter animation.
+   A small radial gradient sits behind the flame area and pulses via
+   opacity — no filter re-rasterisation on the full PNG. */
+.diya::after {
+  content: '';
+  position: absolute;
+  /* position the glow near the flame (top-center of the lamp) */
+  top: 2%;
+  left: 50%;
+  width: 60%;
+  height: 30%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(255,130,20,.55) 0%,
+    rgba(255,90,10,.25) 40%,
+    rgba(255,90,10,0) 70%);
+  pointer-events: none;
+  animation: diyaGlow 3s ease-in-out infinite;
 }
 .diya--left  { left: -6%;  transform: translate3d(-130%, 0, 0); }
-.diya--right { right: -6%; transform: translate3d(130%, 0, 0) scaleX(-1); animation-delay: .9s; /* [ENHANCEMENT] offset flicker */ }
+.diya--right { right: -6%; transform: translate3d(130%, 0, 0) scaleX(-1); }
+.diya--right::after { animation-delay: .9s; /* offset flicker */ }
 
 /* --- 02: invitation copy ---------------------------------- */
 .invite {
@@ -417,12 +445,12 @@ p, h1, h2 { margin: 0; }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: rgba(255, 250, 243, .72);
+  /* Replaced backdrop-filter: blur(3px) with a more opaque background —
+     visually near-identical but eliminates expensive GPU compositing. */
+  background: rgba(255, 250, 243, .88);
   border: 1px solid rgba(196, 148, 80, .38);
   border-radius: 18px;
   padding: 22px 20px;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
   box-shadow: 0 14px 34px rgba(140, 86, 36, .1);
 }
 .field {
@@ -594,6 +622,7 @@ p, h1, h2 { margin: 0; }
   width: auto;
   filter: drop-shadow(0 12px 18px rgba(140, 86, 36, .18));
 }
+.mouse__btn picture { display: contents; }
 
 /* --- Accessibility ---------------------------------------- */
 :focus-visible {
@@ -614,4 +643,104 @@ p, h1, h2 { margin: 0; }
     animation: none !important;
   }
   .petals { display: none; }
+}
+
+/* ===========================================================
+   Post-event Thank You screen
+   =========================================================== */
+@keyframes tyFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes tySlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.thankyou {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(20,8,0,.82) 60%);
+  animation: tyFadeIn .8s ease forwards;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.thankyou[hidden] { display: none; }
+
+.thankyou__img {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  z-index: -1;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.thankyou__content {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  padding: 36px 28px 52px;
+  text-align: center;
+  background: linear-gradient(to top,
+    rgba(12, 4, 0, .92) 0%,
+    rgba(30, 10, 0, .80) 60%,
+    rgba(30, 10, 0, 0) 100%);
+  animation: tySlideUp .9s .3s ease both;
+}
+
+.thankyou__mantra {
+  font-family: Mukta, sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #ffd07a;
+  letter-spacing: .06em;
+  text-shadow: 0 0 24px rgba(255, 180, 50, .6);
+}
+.thankyou__sub {
+  font-family: Mukta, sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  color: #f5c06a;
+  margin-top: 6px;
+  letter-spacing: .08em;
+}
+.thankyou__rule {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c99a4e, transparent);
+  margin: 18px auto;
+}
+.thankyou__title {
+  font-family: Marcellus, serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #fff8ef;
+  text-wrap: balance;
+  text-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+.thankyou__body {
+  font-family: Mukta, sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #e8cfa8;
+  margin-top: 16px;
+  text-wrap: pretty;
+}
+.thankyou__sig {
+  font-family: Marcellus, serif;
+  font-size: 15px;
+  letter-spacing: .14em;
+  color: #c99a4e;
+  margin-top: 20px;
 }
