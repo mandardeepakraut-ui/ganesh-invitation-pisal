@@ -486,6 +486,25 @@ p, h1, h2 { margin: 0; }
 .btn-share:hover  { background: #fff5e8; border-color: #c4944f; }
 .btn-share:active { transform: scale(.985); }
 
+.btn-rsvp {
+  align-self: stretch;
+  border: none;
+  background: linear-gradient(135deg, #e8750a 0%, #c4500a 100%);
+  color: #fff;
+  font-family: Mukta, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: .08em;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 48px;
+  box-shadow: 0 4px 18px rgba(200, 80, 10, .30);
+  transition: filter .18s ease, transform .08s ease, box-shadow .18s ease;
+}
+.btn-rsvp:hover  { filter: brightness(1.08); box-shadow: 0 6px 22px rgba(200, 80, 10, .42); }
+.btn-rsvp:active { transform: scale(.985); }
+
 .btn-calendar {
   align-self: stretch;
   border: 1px solid rgba(196, 148, 80, .38);
