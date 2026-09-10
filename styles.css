@@ -289,6 +289,8 @@ p, h1, h2 { margin: 0; }
   width: 36%;
   display: block;              /* <picture> is inline by default */
   will-change: transform;      /* slide-in uses transform */
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .diya img {
   display: block;
@@ -296,13 +298,9 @@ p, h1, h2 { margin: 0; }
   height: auto;
   object-fit: contain;
 }
-/* Pseudo-element glow replaces the old drop-shadow filter animation.
-   A small radial gradient sits behind the flame area and pulses via
-   opacity — no filter re-rasterisation on the full PNG. */
 .diya::after {
   content: '';
   position: absolute;
-  /* position the glow near the flame (top-center of the lamp) */
   top: 2%;
   left: 50%;
   width: 60%;
@@ -315,6 +313,15 @@ p, h1, h2 { margin: 0; }
     rgba(255,90,10,0) 70%);
   pointer-events: none;
   animation: diyaGlow 3s ease-in-out infinite;
+  transition: transform .3s ease, filter .3s ease;
+}
+.diya--flare::after {
+  transform: translateX(-50%) scale(1.8) !important;
+  background: radial-gradient(ellipse at center,
+    rgba(255,210,80,.95) 0%,
+    rgba(255,130,20,.65) 40%,
+    rgba(255,90,10,0) 75%) !important;
+  box-shadow: 0 0 35px 15px rgba(255,190,50,.7);
 }
 .diya--left  { left: -6%;  transform: translate3d(-130%, 0, 0); }
 .diya--right { right: -6%; transform: translate3d(130%, 0, 0) scaleX(-1); }
@@ -346,7 +353,7 @@ p, h1, h2 { margin: 0; }
 .invite__title {
   font-family: Marcellus, serif;
   font-weight: 400;
-  font-size: 38px;
+  font-size: clamp(30px, 7vw, 42px);
   line-height: 1.12;
   color: #7a3f12;
   text-wrap: balance;

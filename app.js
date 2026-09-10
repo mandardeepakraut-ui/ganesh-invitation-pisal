@@ -227,12 +227,31 @@
     }
   }
 
+  /* --- Tactile Haptic Feedback ----------------------------- */
+  function triggerHaptic() {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(12); } catch (e) {}
+    }
+  }
+
+  /* --- Interactive Diya Lighting Flare -------------------- */
+  function addDiyaInteractions(node) {
+    if (!node) return;
+    node.addEventListener('click', function () {
+      triggerHaptic();
+      node.classList.add('diya--flare');
+      setTimeout(function () { node.classList.remove('diya--flare'); }, 1200);
+    });
+  }
+
   /* --- Interactions --------------------------------------- */
   function openMap() {
+    triggerHaptic();
     window.open(CONFIG.mapsUrl, '_blank', 'noopener');
   }
 
   function shareOnWhatsApp() {
+    triggerHaptic();
     launchConfetti(); /* [ENHANCEMENT] */
     /* Use the live Vercel/hosted URL so guests get a real clickable link */
     var pageUrl = window.location.origin + window.location.pathname;
@@ -275,6 +294,9 @@
     if (el.mapBtn)  el.mapBtn.addEventListener('click', openMap);
     if (el.bubble)  el.bubble.addEventListener('click', openMap);
 
+    addDiyaInteractions(el.diyaL);
+    addDiyaInteractions(el.diyaR);
+
     /* --- Personalized greeting from ?name= URL param -------- */
     var params = new URLSearchParams(window.location.search);
     var guestName = (params.get('name') || '').trim();
@@ -283,22 +305,35 @@
       el.guestGreeting.hidden = false;
     }
 
-    /* --- Countdown to 14 Sep 2026 --------------------------- */
+    /* --- Live Ticking Countdown to 14 Sep 2026 -------------- */
     if (el.countdown) {
-      var eventDate = new Date('2026-09-14T00:00:00');
-      var today = new Date();
-      today.setHours(0, 0, 0, 0);
-      var days = Math.round((eventDate - today) / 86400000);
-      el.countdown.textContent =
-        days > 1  ? days + ' days to go 🪔' :
-        days === 1 ? 'Tomorrow is the day! 🎉' :
-        days === 0 ? 'Today is the day! 🎉' :
-                     'Thank you for celebrating with us! 🙏';
+      var updateCountdown = function () {
+        var eventDate = new Date('2026-09-14T00:00:00');
+        var now = new Date();
+        var diff = eventDate - now;
+
+        if (diff <= 0) {
+          var endDiff = new Date('2026-09-16T00:00:00') - now;
+          el.countdown.textContent = endDiff > 0 ? 'Today is the day! 🎉' : 'Thank you for celebrating with us! 🙏';
+          return;
+        }
+
+        var days  = Math.floor(diff / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        var mins  = Math.floor((diff / (1000 * 60)) % 60);
+        var secs  = Math.floor((diff / 1000) % 60);
+
+        var pad = function (n) { return n < 10 ? '0' + n : n; };
+        el.countdown.textContent = days + 'd : ' + pad(hours) + 'h : ' + pad(mins) + 'm : ' + pad(secs) + 's 🪔';
+      };
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
     }
 
     /* --- Add to Calendar ------------------------------------ */
     if (el.calBtn) {
       el.calBtn.addEventListener('click', function () {
+        triggerHaptic();
         var loc  = 'Sudam Shinde Chawl Room No 2, Prem Nagar Station Road, Jogeshwari East, Mumbai 400060';
         var desc = 'Darshan, aarti and prasad at our home.\n\nDirections: ' + CONFIG.mapsUrl;
         /* iOS/macOS Safari → .ics download; Android/Desktop → Google Calendar */
