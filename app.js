@@ -9,7 +9,6 @@
   /* --- Configuration -------------------------------------- */
   var CONFIG = {
     mapsUrl:      'https://maps.app.goo.gl/n6iHKFjtodLQPsuQ7',
-    rsvpPhone:    '91XXXXXXXXXX',   /* ← REPLACE with your WhatsApp number (country code + number) */
     showWhatsApp: true,
     showPetals:   true,
     shareMessage: 'Ganpati Bappa Morya! You and your family are invited for darshan ' +
@@ -22,7 +21,7 @@
    'bell1', 'bell2', 'bell3', 'bell4', 'diyaL', 'diyaR',
    'invite', 'card', 'cardRegion', 'mouse', 'bubble',
    'petals', 'shareBtn', 'mapBtn', 'bubbleBox',
-   'calBtn', 'countdown', 'guestGreeting', 'rsvpBtn'].forEach(function (id) {
+   'calBtn', 'countdown', 'guestGreeting'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
 
@@ -239,18 +238,6 @@
     if (guestName && el.guestGreeting) {
       el.guestGreeting.textContent = 'Dear ' + guestName + ',';
       el.guestGreeting.hidden = false;
-    }
-
-    /* --- RSVP button — opens WhatsApp to host ---------------  */
-    if (el.rsvpBtn) {
-      el.rsvpBtn.addEventListener('click', function () {
-        var who = guestName || 'a guest';
-        var msg = 'Ganpati Bappa Morya! 🙏\n\n' +
-                  'I will be joining you for Darshan & Aarti on 14 & 15 September 2026.\n\n' +
-                  '\u2014 ' + who;
-        window.open('https://wa.me/' + CONFIG.rsvpPhone + '?text=' + encodeURIComponent(msg),
-                    '_blank', 'noopener');
-      });
     }
 
     /* --- Countdown to 14 Sep 2026 --------------------------- */
