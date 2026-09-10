@@ -280,17 +280,6 @@
 
   /* --- Boot ----------------------------------------------- */
   function start() {
-    /* --- Post-event Thank You mode (auto after Sep 15 2026) - */
-    if (el.thankYouScreen) {
-      var now = new Date();
-      /* Show from Sep 16 onwards (event ends Sep 15) */
-      var eventOver = new Date('2026-09-16T00:00:00');
-      if (now >= eventOver) {
-        el.thankYouScreen.hidden = false;
-        return; /* skip rest of invite setup */
-      }
-    }
-
     if (el.petals) el.petals.hidden = !CONFIG.showPetals;
     if (el.shareBtn) {
       el.shareBtn.hidden = !CONFIG.showWhatsApp;
