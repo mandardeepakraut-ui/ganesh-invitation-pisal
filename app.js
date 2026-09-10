@@ -285,7 +285,13 @@
       el.shareBtn.hidden = !CONFIG.showWhatsApp;
       el.shareBtn.addEventListener('click', shareOnWhatsApp);
     }
-    if (el.mapBtn)  el.mapBtn.addEventListener('click', openMap);
+    if (el.mapBtn) {
+      el.mapBtn.addEventListener('click', function () {
+        triggerHaptic();
+        el.mapBtn.classList.add('mouse__btn--bounce');
+        setTimeout(function () { el.mapBtn.classList.remove('mouse__btn--bounce'); }, 600);
+      });
+    }
     if (el.bubble)  el.bubble.addEventListener('click', openMap);
 
     addDiyaInteractions(el.diyaL);

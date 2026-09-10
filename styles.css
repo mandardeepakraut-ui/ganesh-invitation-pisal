@@ -622,6 +622,13 @@ p, h1, h2 { margin: 0; }
   animation: bob 4s ease-in-out infinite;
   transition: transform .08s ease;
 }
+@keyframes mouseBounce {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.18) rotate(-8deg); }
+}
+.mouse__btn--bounce {
+  animation: mouseBounce 0.5s ease-in-out !important;
+}
 .mouse__btn:active { transform: scale(.97); }
 .mouse__btn img {
   display: block;
