@@ -57,24 +57,19 @@
   function seg(p, a, b) { return clamp01((p - a) / (b - a)); }
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
-  /* Progress 0..1 of a sticky scene:
-     Calculated using cached offsetTop to avoid getBoundingClientRect reflows.
-     - 0.0 to 0.15: entry phase while scene top moves from viewport bottom to top
-     - 0.15 to 1.00: pinned phase while stage is stuck at top: 0
-     Guarantees 85% of animation progress takes place WHILE pinned, with zero reflows. */
+  /* Progress 0..1 of a scene as it scrolls smoothly through the viewport.
+     - 0.0: top edge at bottom of screen
+     - 1.0: top edge at top of screen (scene fully fills viewport) */
   function sceneProgress(top, height, viewportH) {
-    var entryProgress = clamp01((viewportH - top) / viewportH);
-    var pinDist = Math.max(1, height - viewportH);
-    var pinProgress = clamp01(-top / pinDist);
-    return 0.15 * entryProgress + 0.85 * pinProgress;
+    return clamp01((viewportH - top) / viewportH);
   }
 
   /* --- Per-frame choreography ----------------------------- */
   var BELLS = [
-    ['bell1', 0.10, 0.40, -150],
-    ['bell2', 0.14, 0.48, -190],
-    ['bell3', 0.18, 0.54, -190],
-    ['bell4', 0.22, 0.60, -150]
+    ['bell1', 0.10, 0.50, -150],
+    ['bell2', 0.14, 0.56, -190],
+    ['bell3', 0.18, 0.62, -190],
+    ['bell4', 0.22, 0.68, -150]
   ];
 
   function frame() {
@@ -89,7 +84,7 @@
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
       /* Each garland half sweeps in from the edge it hangs against. */
-      var g = easeOut(seg(p2, 0.05, 0.35));
+      var g = easeOut(seg(p2, 0.0, 0.45));
       if (el.garlandL) {
         el.garlandL.style.transform = 'translate3d(' + (-110 * (1 - g)) + '%,0,0)';
       }
@@ -104,7 +99,7 @@
         node.style.transform = 'translate3d(0,' + (spec[3] * (1 - t)) + '%,0)';
       });
 
-      var d = easeOut(seg(p2, 0.25, 0.65));
+      var d = easeOut(seg(p2, 0.20, 0.75));
       if (el.diyaL) {
         el.diyaL.style.transform = 'translate3d(' + (-130 * (1 - d)) + '%,0,0)';
       }
@@ -112,7 +107,7 @@
         el.diyaR.style.transform = 'translate3d(' + (130 * (1 - d)) + '%,0,0) scaleX(-1)';
       }
 
-      var i = seg(p2, 0.45, 0.90);
+      var i = seg(p2, 0.35, 0.95);
       if (el.invite) {
         el.invite.style.opacity = i;
         el.invite.style.transform =
@@ -122,7 +117,7 @@
 
     /* --- Scene 03: details card, mushak, speech bubble ------ */
     if (el.sec3) {
-      var c = seg(p3, 0.10, 0.65);
+      var c = seg(p3, 0.10, 0.70);
       if (el.card) {
         /* Use cached card scale — recalculated only on resize, not every frame. */
         el.card.style.opacity = c;
@@ -131,12 +126,12 @@
         maybeRevealCard(c); /* [ENHANCEMENT] stagger + WA pulse */
       }
 
-      var m = easeOut(seg(p3, 0.25, 0.75));
+      var m = easeOut(seg(p3, 0.25, 0.80));
       if (el.mouse) {
         el.mouse.style.transform = 'translate3d(' + (135 * (1 - m)) + '%,0,0)';
       }
       if (el.bubble) {
-        el.bubble.style.opacity = seg(p3, 0.65, 0.90);
+        el.bubble.style.opacity = seg(p3, 0.60, 0.95);
       }
     }
 
