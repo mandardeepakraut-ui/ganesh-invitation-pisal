@@ -46,25 +46,25 @@
   function seg(p, a, b) { return clamp01((p - a) / (b - a)); }
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
-  /* Progress 0..1 of a sticky scene.
-     0 when the section's top edge first crosses the bottom of the viewport,
-     1 once the sticky stage has been scrolled all the way through. Counting
-     the entry phase means the choreography is already running as the scene
-     slides into view, rather than waiting for the stage to pin. */
+  /* Progress 0..1 of a sticky scene:
+     - 0.0 to 0.15: entry phase while scene top moves from viewport bottom to top (r.top: vh -> 0)
+     - 0.15 to 1.00: pinned phase while stage is stuck at top: 0 (r.top: 0 -> -(height - vh))
+     Guarantees 85% of animation progress takes place WHILE pinned, so scrolling
+     actively drives animation on screen with zero dead scroll holds. */
   function sceneProgress(node, viewportH) {
     var r = node.getBoundingClientRect();
-    return clamp01((viewportH - r.top) / Math.max(1, r.height));
+    var entryProgress = clamp01((viewportH - r.top) / viewportH);
+    var pinDist = Math.max(1, r.height - viewportH);
+    var pinProgress = clamp01(-r.top / pinDist);
+    return 0.15 * entryProgress + 0.85 * pinProgress;
   }
 
   /* --- Per-frame choreography ----------------------------- */
-  /* Thresholds are tuned against the progress above: with a 180svh scene the
-     stage pins at about p = 0.55, so the decor lands as it settles and the
-     copy resolves just after, leaving a still hold before the scene exits. */
   var BELLS = [
-    ['bell1', 0.04, 0.35, -150],
-    ['bell2', 0.08, 0.42, -190],
-    ['bell3', 0.11, 0.48, -190],
-    ['bell4', 0.15, 0.55, -150]
+    ['bell1', 0.10, 0.40, -150],
+    ['bell2', 0.14, 0.48, -190],
+    ['bell3', 0.18, 0.54, -190],
+    ['bell4', 0.22, 0.60, -150]
   ];
 
   function frame() {
@@ -79,7 +79,7 @@
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
       /* Each garland half sweeps in from the edge it hangs against. */
-      var g = easeOut(seg(p2, 0, 0.32));
+      var g = easeOut(seg(p2, 0.05, 0.35));
       if (el.garlandL) {
         el.garlandL.style.transform = 'translate3d(' + (-110 * (1 - g)) + '%,0,0)';
       }
@@ -94,7 +94,7 @@
         node.style.transform = 'translate3d(0,' + (spec[3] * (1 - t)) + '%,0)';
       });
 
-      var d = easeOut(seg(p2, 0.28, 0.64));
+      var d = easeOut(seg(p2, 0.25, 0.65));
       if (el.diyaL) {
         el.diyaL.style.transform = 'translate3d(' + (-130 * (1 - d)) + '%,0,0)';
       }
@@ -102,7 +102,7 @@
         el.diyaR.style.transform = 'translate3d(' + (130 * (1 - d)) + '%,0,0) scaleX(-1)';
       }
 
-      var i = seg(p2, 0.45, 0.82);
+      var i = seg(p2, 0.45, 0.90);
       if (el.invite) {
         el.invite.style.opacity = i;
         el.invite.style.transform =
@@ -126,7 +126,7 @@
         el.mouse.style.transform = 'translate3d(' + (135 * (1 - m)) + '%,0,0)';
       }
       if (el.bubble) {
-        el.bubble.style.opacity = seg(p3, 0.65, 0.88);
+        el.bubble.style.opacity = seg(p3, 0.65, 0.90);
       }
     }
 

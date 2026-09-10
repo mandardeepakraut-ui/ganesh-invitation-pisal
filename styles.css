@@ -186,8 +186,8 @@ p, h1, h2 { margin: 0; }
    Scroll scenes (sticky stages)
    =========================================================== */
 .scene { position: relative; contain: layout style; }
-.scene--invite  { height: 135vh; height: 135svh; }
-.scene--details { height: 135vh; height: 135svh; }
+.scene--invite  { height: 160vh; height: 160svh; }
+.scene--details { height: 160vh; height: 160svh; }
 
 .scene__stage {
   position: sticky;
