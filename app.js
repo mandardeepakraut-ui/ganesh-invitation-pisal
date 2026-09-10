@@ -61,10 +61,10 @@
      stage pins at about p = 0.55, so the decor lands as it settles and the
      copy resolves just after, leaving a still hold before the scene exits. */
   var BELLS = [
-    ['bell1', 0.04, 0.30, -150],
-    ['bell2', 0.08, 0.36, -190],
-    ['bell3', 0.11, 0.40, -190],
-    ['bell4', 0.15, 0.46, -150]
+    ['bell1', 0.04, 0.35, -150],
+    ['bell2', 0.08, 0.42, -190],
+    ['bell3', 0.11, 0.48, -190],
+    ['bell4', 0.15, 0.55, -150]
   ];
 
   function frame() {
@@ -79,7 +79,7 @@
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
       /* Each garland half sweeps in from the edge it hangs against. */
-      var g = easeOut(seg(p2, 0, 0.26));
+      var g = easeOut(seg(p2, 0, 0.32));
       if (el.garlandL) {
         el.garlandL.style.transform = 'translate3d(' + (-110 * (1 - g)) + '%,0,0)';
       }
@@ -94,7 +94,7 @@
         node.style.transform = 'translate3d(0,' + (spec[3] * (1 - t)) + '%,0)';
       });
 
-      var d = easeOut(seg(p2, 0.26, 0.54));
+      var d = easeOut(seg(p2, 0.28, 0.64));
       if (el.diyaL) {
         el.diyaL.style.transform = 'translate3d(' + (-130 * (1 - d)) + '%,0,0)';
       }
@@ -102,7 +102,7 @@
         el.diyaR.style.transform = 'translate3d(' + (130 * (1 - d)) + '%,0,0) scaleX(-1)';
       }
 
-      var i = seg(p2, 0.44, 0.70);
+      var i = seg(p2, 0.45, 0.82);
       if (el.invite) {
         el.invite.style.opacity = i;
         el.invite.style.transform =
@@ -112,7 +112,7 @@
 
     /* --- Scene 03: details card, mushak, speech bubble ------ */
     if (el.sec3) {
-      var c = seg(p3, 0.10, 0.42);
+      var c = seg(p3, 0.10, 0.65);
       if (el.card) {
         /* Use cached card scale — recalculated only on resize, not every frame. */
         el.card.style.opacity = c;
@@ -121,12 +121,12 @@
         maybeRevealCard(c); /* [ENHANCEMENT] stagger + WA pulse */
       }
 
-      var m = easeOut(seg(p3, 0.22, 0.58));
+      var m = easeOut(seg(p3, 0.25, 0.75));
       if (el.mouse) {
         el.mouse.style.transform = 'translate3d(' + (135 * (1 - m)) + '%,0,0)';
       }
       if (el.bubble) {
-        el.bubble.style.opacity = seg(p3, 0.58, 0.74);
+        el.bubble.style.opacity = seg(p3, 0.65, 0.88);
       }
     }
 
