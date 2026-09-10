@@ -8,7 +8,7 @@
 
   /* --- Configuration -------------------------------------- */
   var CONFIG = {
-    mapsUrl: 'https://maps.app.goo.gl/1TSKo6oKLRywPhqB7',
+    mapsUrl: 'https://maps.app.goo.gl/n6iHKFjtodLQPsuQ7',
     showWhatsApp: true,
     showPetals: true,
     shareMessage: 'Ganpati Bappa Morya! You and your family are invited for darshan ' +
