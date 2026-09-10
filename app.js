@@ -20,7 +20,8 @@
   ['heroVideo', 'heroText', 'sec2', 'sec3', 'garlandL', 'garlandR',
    'bell1', 'bell2', 'bell3', 'bell4', 'diyaL', 'diyaR',
    'invite', 'card', 'cardRegion', 'mouse', 'bubble',
-   'petals', 'shareBtn', 'mapBtn', 'bubbleBox'].forEach(function (id) {
+   'petals', 'shareBtn', 'mapBtn', 'bubbleBox',
+   'calBtn', 'countdown', 'guestGreeting'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
 
@@ -213,7 +214,11 @@
 
   function shareOnWhatsApp() {
     launchConfetti(); /* [ENHANCEMENT] */
-    var text = CONFIG.shareMessage + CONFIG.mapsUrl;
+    /* Use the live Vercel/hosted URL so guests get a real clickable link */
+    var pageUrl = window.location.origin + window.location.pathname;
+    var text = CONFIG.shareMessage +
+               '\n\n🔗 Open Invitation: ' + pageUrl +
+               '\n\n🗺️ Directions: ' + CONFIG.mapsUrl;
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
   }
 
@@ -225,8 +230,65 @@
       el.shareBtn.addEventListener('click', shareOnWhatsApp);
     }
     if (el.mapBtn) el.mapBtn.addEventListener('click', openMap);
-    /* Bubble speech box is also a map shortcut */
     if (el.bubble) el.bubble.addEventListener('click', openMap);
+
+    /* --- Personalized greeting from ?name= URL param -------- */
+    var params = new URLSearchParams(window.location.search);
+    var guestName = (params.get('name') || '').trim();
+    if (guestName && el.guestGreeting) {
+      el.guestGreeting.textContent = 'Dear ' + guestName + ',';
+      el.guestGreeting.hidden = false;
+    }
+
+    /* --- Countdown to 14 Sep 2026 --------------------------- */
+    if (el.countdown) {
+      var eventDate = new Date('2026-09-14T00:00:00');
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+      var days = Math.round((eventDate - today) / 86400000);
+      el.countdown.textContent =
+        days > 1  ? days + ' days to go 🪔' :
+        days === 1 ? 'Tomorrow is the day! 🎉' :
+        days === 0 ? 'Today is the day! 🎉' :
+                     'Thank you for celebrating with us! 🙏';
+    }
+
+    /* --- Add to Calendar ------------------------------------ */
+    if (el.calBtn) {
+      el.calBtn.addEventListener('click', function () {
+        var loc  = 'Sudam Shinde Chawl Room No 2, Prem Nagar Station Road, Jogeshwari East, Mumbai 400060';
+        var desc = 'Darshan, aarti and prasad at our home.\n\nDirections: ' + CONFIG.mapsUrl;
+        /* iOS/macOS Safari → .ics download; Android/Desktop → Google Calendar */
+        var isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) &&
+                      !/Chrome|CriOS|FxiOS/i.test(navigator.userAgent);
+        if (isApple) {
+          var ics = [
+            'BEGIN:VCALENDAR', 'VERSION:2.0',
+            'BEGIN:VEVENT',
+            'DTSTART;VALUE=DATE:20260914',
+            'DTEND;VALUE=DATE:20260916',
+            'SUMMARY:Ganesh Chaturthi — Darshan & Aarti (Pisal Family)',
+            'DESCRIPTION:' + desc.replace(/\n/g, '\\n'),
+            'LOCATION:' + loc,
+            'END:VEVENT', 'END:VCALENDAR'
+          ].join('\r\n');
+          var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'ganesh-chaturthi-2026.ics';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else {
+          var gcUrl = 'https://www.google.com/calendar/render?action=TEMPLATE' +
+            '&text='     + encodeURIComponent('Ganesh Chaturthi — Darshan & Aarti (Pisal Family)') +
+            '&dates=20260914/20260916' +
+            '&details='  + encodeURIComponent(desc) +
+            '&location=' + encodeURIComponent(loc);
+          window.open(gcUrl, '_blank', 'noopener');
+        }
+      });
+    }
 
     document.addEventListener('scroll', function () {
       requestRender();
@@ -234,7 +296,7 @@
     }, { passive: true, capture: true });
 
     window.addEventListener('resize', function () {
-      _vh = window.innerHeight; /* refresh cached viewport height */
+      _vh = window.innerHeight;
       requestRender();
     });
 
@@ -242,10 +304,8 @@
       if (!document.hidden) requestRender();
     });
 
-    /* iOS keepalive: nudge paused video every 4 s (low cost) */
     setInterval(kickVideo, 4000);
-
-    requestRender(); /* initial paint */
+    requestRender();
   }
 
   window.addEventListener('pagehide', function () {
