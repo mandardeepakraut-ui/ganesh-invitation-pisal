@@ -28,16 +28,27 @@
     el[id] = document.getElementById(id);
   });
 
-  /* --- Cached layout values (updated on resize) ----------- */
+  /* --- Cached layout values (updated on resize/boot) ------- */
   var _vh = window.innerHeight;
   var _cachedCardScale = 1;
+  var _sec2Top = 0, _sec2Height = 0;
+  var _sec3Top = 0, _sec3Height = 0;
 
-  function recalcCardScale() {
+  function recalcLayout() {
+    _vh = window.innerHeight;
     if (el.cardRegion && el.card && el.card.scrollHeight) {
       _cachedCardScale = Math.max(0.7, Math.min(1,
         (el.cardRegion.clientHeight - 10) / el.card.scrollHeight));
     } else {
       _cachedCardScale = 1;
+    }
+    if (el.sec2) {
+      _sec2Top = el.sec2.offsetTop;
+      _sec2Height = el.sec2.offsetHeight;
+    }
+    if (el.sec3) {
+      _sec3Top = el.sec3.offsetTop;
+      _sec3Height = el.sec3.offsetHeight;
     }
   }
 
@@ -47,15 +58,14 @@
   function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
   /* Progress 0..1 of a sticky scene:
-     - 0.0 to 0.15: entry phase while scene top moves from viewport bottom to top (r.top: vh -> 0)
-     - 0.15 to 1.00: pinned phase while stage is stuck at top: 0 (r.top: 0 -> -(height - vh))
-     Guarantees 85% of animation progress takes place WHILE pinned, so scrolling
-     actively drives animation on screen with zero dead scroll holds. */
-  function sceneProgress(node, viewportH) {
-    var r = node.getBoundingClientRect();
-    var entryProgress = clamp01((viewportH - r.top) / viewportH);
-    var pinDist = Math.max(1, r.height - viewportH);
-    var pinProgress = clamp01(-r.top / pinDist);
+     Calculated using cached offsetTop to avoid getBoundingClientRect reflows.
+     - 0.0 to 0.15: entry phase while scene top moves from viewport bottom to top
+     - 0.15 to 1.00: pinned phase while stage is stuck at top: 0
+     Guarantees 85% of animation progress takes place WHILE pinned, with zero reflows. */
+  function sceneProgress(top, height, viewportH) {
+    var entryProgress = clamp01((viewportH - top) / viewportH);
+    var pinDist = Math.max(1, height - viewportH);
+    var pinProgress = clamp01(-top / pinDist);
     return 0.15 * entryProgress + 0.85 * pinProgress;
   }
 
@@ -70,11 +80,11 @@
   function frame() {
     var vh = _vh; /* use cached value — avoids forced layout on every frame */
 
-    /* --- Batch DOM reads first ----------------------------- */
+    /* --- Batch DOM reads first (pure math, no reflow) ------- */
     var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 
-    var p2 = el.sec2 ? sceneProgress(el.sec2, vh) : 0;
-    var p3 = el.sec3 ? sceneProgress(el.sec3, vh) : 0;
+    var p2 = el.sec2 ? sceneProgress(_sec2Top - scrollY, _sec2Height, vh) : 0;
+    var p3 = el.sec3 ? sceneProgress(_sec3Top - scrollY, _sec3Height, vh) : 0;
 
     /* --- Scene 02: garland, bells, lamps, invitation copy --- */
     if (el.sec2) {
@@ -368,27 +378,31 @@
       });
     }
 
-    /* --- Scroll: only schedule rAF, no video check ---------- */
-    document.addEventListener('scroll', requestRender, { passive: true, capture: true });
+    /* --- Scroll: passive listener on window (no capture) ---- */
+    window.addEventListener('scroll', requestRender, { passive: true });
 
     /* --- Resize: debounced ---------------------------------- */
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        recalcLayout();
+        requestRender();
+      }, 150);
+    });
 
     /* --- Visibility: resume video + re-render --------------- */
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) {
-        startVideo();
+        // startVideo();
         requestRender();
       }
     });
 
-    /* --- Video: one-shot start (not per-scroll) ------------- */
-    startVideo();
+    /* --- Video: temporarily disabled for scroll test -------- */
+    // startVideo();
 
-    /* --- Card scale: initial calculation -------------------- */
-    recalcCardScale();
-
-    /* --- First render --------------------------------------- */
+    /* --- Initial layout calculation & first render ---------- */
+    recalcLayout();
     requestRender();
   }
 
