@@ -15,7 +15,7 @@
     showWhatsApp: true,
     showPetals:   true,
     shareMessage: 'Ganpati Bappa Morya! You and your family are invited for darshan ' +
-                  'and aarti at our home on 14 & 15 September 2026. Directions: '
+                  'and aarti at our home from 14 to 18 September 2026. Directions: '
   };
 
   /* --- Element lookup (cached once) ----------------------- */
@@ -313,7 +313,7 @@
         var diff = eventDate - now;
 
         if (diff <= 0) {
-          var endDiff = new Date('2026-09-16T00:00:00') - now;
+          var endDiff = new Date('2026-09-19T00:00:00') - now;
           el.countdown.textContent = endDiff > 0 ? 'Today is the day! 🎉' : 'Thank you for celebrating with us! 🙏';
           return;
         }
@@ -344,7 +344,7 @@
             'BEGIN:VCALENDAR', 'VERSION:2.0',
             'BEGIN:VEVENT',
             'DTSTART;VALUE=DATE:20260914',
-            'DTEND;VALUE=DATE:20260916',
+            'DTEND;VALUE=DATE:20260919',
             'SUMMARY:Ganesh Chaturthi — Darshan & Aarti (Pisal Family)',
             'DESCRIPTION:' + desc.replace(/\n/g, '\\n'),
             'LOCATION:' + loc,
@@ -360,7 +360,7 @@
         } else {
           var gcUrl = 'https://www.google.com/calendar/render?action=TEMPLATE' +
             '&text='     + encodeURIComponent('Ganesh Chaturthi — Darshan & Aarti (Pisal Family)') +
-            '&dates=20260914/20260916' +
+            '&dates=20260914/20260919' +
             '&details='  + encodeURIComponent(desc) +
             '&location=' + encodeURIComponent(loc);
           window.open(gcUrl, '_blank', 'noopener');
